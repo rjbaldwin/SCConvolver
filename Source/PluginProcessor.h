@@ -1,18 +1,13 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
+// R J Baldwin - Project started 15/11/2023
+// Supercoiled Convolver
+// This is a basic VST3 impulse response loader for creative sound design
 
 #pragma once
 
 #include <JuceHeader.h>
 
 //==============================================================================
-/**
-*/
+
 class SCConvolverAudioProcessor  : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
@@ -56,7 +51,18 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    // so the loadfile browser remembers last load location
+    juce::File root, savedFile;
+    juce::dsp::Convolution irLoader;
 private:
+
+    juce::dsp::ProcessSpec spec;
+    
+    //juce::AudioProcessorValueTreeState treestate;
+
+
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SCConvolverAudioProcessor)
 };
