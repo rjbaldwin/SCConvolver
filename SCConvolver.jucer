@@ -37,7 +37,7 @@
     <VS2022 targetFolder="Builds/VisualStudio2022">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="SCConvolver" enablePluginBinaryCopyStep="1"
-                       vst3BinaryLocation="D:\RobsStorageLocation\Odchody Cartella\Dev_Libraries\VST3TestPlugins"/>
+                       vst3BinaryLocation="E:\07_Dev\PluginTestEnvironment"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="SCConvolver"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
