@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -19,14 +11,21 @@ SCConvolverAudioProcessor::SCConvolverAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+    treeState{*this, nullptr,"PARAMETERS",createParameterLayout()}
 #endif
+
+
 {
+    treeState.addParameterListener("GAIN", this);
 }
 
 SCConvolverAudioProcessor::~SCConvolverAudioProcessor()
 {
+    treeState.removeParameterListener("GAIN", this);
 }
+
+
 
 //==============================================================================
 const juce::String SCConvolverAudioProcessor::getName() const
@@ -135,6 +134,10 @@ bool SCConvolverAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 }
 #endif
 
+// ****************************************************************************
+// **********************PROCESS BLOCK ****************************************
+// ****************************************************************************
+
 void SCConvolverAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -146,6 +149,21 @@ void SCConvolverAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     if (irLoader.getCurrentIRSize() > 0)
     {
         irLoader.process(juce::dsp::ProcessContextReplacing<float>(block));
+    }
+
+    // for output gain
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    {
+        auto* data = buffer.getWritePointer(channel);
+
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            auto input = data[sample];
+            float output;
+
+            data[sample] = buffer.getSample(channel, sample) * rawVolume;
+
+        }
     }
 }
 
@@ -163,15 +181,34 @@ juce::AudioProcessorEditor* SCConvolverAudioProcessor::createEditor()
 //==============================================================================
 void SCConvolverAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    auto state = treeState.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void SCConvolverAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName(treeState.state.getType()))
+            treeState.replaceState(juce::ValueTree::fromXml(*xmlState));
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout SCConvolverAudioProcessor::createParameterLayout()
+{
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+    auto gainParam = std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", -48.0f, 0.0f, -10.0f);
+    params.push_back(std::move(gainParam));
+
+    return { params.begin(), params.end() };
+
+}
+
+void SCConvolverAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+
 }
 
 //==============================================================================

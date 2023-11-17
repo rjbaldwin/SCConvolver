@@ -1,17 +1,10 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 //==============================================================================
 SCConvolverAudioProcessorEditor::SCConvolverAudioProcessorEditor (SCConvolverAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), 
+    audioProcessor (p)
 {
     // load button
     addAndMakeVisible(loadButton);
@@ -20,6 +13,32 @@ SCConvolverAudioProcessorEditor::SCConvolverAudioProcessorEditor (SCConvolverAud
         {
             fileBrowser(fileChooser);
         };
+
+
+    // gain slider
+    addAndMakeVisible(gainSlider);
+    gainSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
+   
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 200, 25);
+    gainSlider.setValue(-10.0f);
+    gainSlider.setTextValueSuffix(" dB");
+    gainSlider.setRange(-48.0f, 0.0f);
+    gainSlider.setNumDecimalPlacesToDisplay(1);
+    gainSlider.addListener(this);
+    gainSliderAttachment = std::make_unique<SliderAttachment>(audioProcessor.treeState, "GAIN", gainSlider);
+
+
+    // gain label
+    addAndMakeVisible(gainLabel);
+    gainLabel.attachToComponent(&gainSlider, false);
+    gainLabel.setText("Gain", juce::dontSendNotification);
+    gainLabel.setColour(juce::Label::textColourId, juce::Colours::black);
+    juce::Font gainfont = gainLabel.getFont();
+    gainfont.setHeight(20.0f);
+    gainfont.setBold(true);
+    gainLabel.setFont(gainfont);
+    gainLabel.setJustificationType(juce::Justification::centred);
+
 
     setSize (600, 400);
 }
@@ -43,6 +62,9 @@ void SCConvolverAudioProcessorEditor::resized()
    
     // load button 
     loadButton.setBounds(20, 20, 100, 50);
+
+    // gain slider
+    gainSlider.setBounds(50, 300, 80, 80);
 }
 
 
@@ -76,6 +98,15 @@ void SCConvolverAudioProcessorEditor::fileBrowser(std::unique_ptr<juce::FileChoo
 
         });
 
+}
+
+void SCConvolverAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
+{
+    if (slider == &gainSlider)
+    {
+        audioProcessor.rawVolume = pow(10, gainSlider.getValue() / 20);
+        DBG("Raw Volume: " << audioProcessor.rawVolume);
+    }
 }
 
 

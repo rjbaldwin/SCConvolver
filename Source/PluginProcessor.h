@@ -8,7 +8,7 @@
 
 //==============================================================================
 
-class SCConvolverAudioProcessor  : public juce::AudioProcessor
+class SCConvolverAudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -51,14 +51,21 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
     // so the loadfile browser remembers last load location
     juce::File root, savedFile;
     juce::dsp::Convolution irLoader;
+
+    juce::AudioProcessorValueTreeState treeState;
+    // for gain
+    double rawVolume{};
 private:
 
     juce::dsp::ProcessSpec spec;
     
-    //juce::AudioProcessorValueTreeState treestate;
+    
 
 
 
