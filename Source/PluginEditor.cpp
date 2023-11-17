@@ -18,29 +18,7 @@ SCConvolverAudioProcessorEditor::SCConvolverAudioProcessorEditor (SCConvolverAud
     loadButton.setButtonText("Load IR");
     loadButton.onClick = [this]()
         {
-            fileChooser = std::make_unique<juce::FileChooser>("Choose IR",
-                                                                audioProcessor.root,
-                                                                "*");
-
-            const auto fileChooserFlags = juce::FileBrowserComponent::openMode | 
-                                          juce::FileBrowserComponent::canSelectFiles | 
-                                          juce::FileBrowserComponent::canSelectDirectories;
-            fileChooser->launchAsync(fileChooserFlags, [this](const juce::FileChooser& chooser)
-            {
-                    juce::File result(chooser.getResult());
-
-                    if (result.getFileExtension() == ".wav" || result.getFileExtension() == ".mp3")
-                    {
-                        audioProcessor.savedFile = result;
-                        audioProcessor.root = result.getParentDirectory().getFullPathName();
-                        audioProcessor.irLoader.reset();
-                        audioProcessor.irLoader.loadImpulseResponse(audioProcessor.savedFile,
-                                                                    juce::dsp::Convolution::Stereo::yes,
-                                                                    juce::dsp::Convolution::Trim::yes,
-                                                                    0);
-                    }
-
-            });
+            fileBrowser(fileChooser);
         };
 
     setSize (600, 400);
@@ -66,3 +44,38 @@ void SCConvolverAudioProcessorEditor::resized()
     // load button 
     loadButton.setBounds(20, 20, 100, 50);
 }
+
+
+//==============================================================================
+
+// Filechooser function to simplify button click lambda.  Use this in other projects for simplicity
+
+void SCConvolverAudioProcessorEditor::fileBrowser(std::unique_ptr<juce::FileChooser>& fileChooser)
+{
+    fileChooser = std::make_unique<juce::FileChooser>("Choose IR",
+        audioProcessor.root,
+        "*");
+
+    const auto fileChooserFlags = juce::FileBrowserComponent::openMode |
+        juce::FileBrowserComponent::canSelectFiles |
+        juce::FileBrowserComponent::canSelectDirectories;
+    fileChooser->launchAsync(fileChooserFlags, [this](const juce::FileChooser& chooser)
+        {
+            juce::File result(chooser.getResult());
+
+            if (result.getFileExtension() == ".wav" || result.getFileExtension() == ".mp3")
+            {
+                audioProcessor.savedFile = result;
+                audioProcessor.root = result.getParentDirectory().getFullPathName();
+                audioProcessor.irLoader.reset();
+                audioProcessor.irLoader.loadImpulseResponse(audioProcessor.savedFile,
+                    juce::dsp::Convolution::Stereo::yes,
+                    juce::dsp::Convolution::Trim::yes,
+                    0);
+            }
+
+        });
+
+}
+
+
